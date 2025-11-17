@@ -1,0 +1,93 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  font-family: 'Arial', sans-serif;
+  background: #000;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+.instructions {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px 30px;
+  border-radius: 15px;
+  border: 2px solid #ff6b6b;
+  font-size: 14px;
+  z-index: 100;
+  pointer-events: none;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+}
+
+.instructions h3 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: #ff6b6b;
+}
+
+.instructions p {
+  margin: 5px 0;
+  line-height: 1.6;
+}
+
+.speedometer {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #4ecdc4;
+  padding: 15px 40px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 100;
+  pointer-events: none;
+  border: 2px solid #4ecdc4;
+  box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+}
+
+.speedometer p {
+  margin: 0;
+}
+
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Optional: Add racing stripes to UI */
+.instructions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #ff6b6b 20%, 
+    #4ecdc4 50%, 
+    #ff6b6b 80%, 
+    transparent 100%);
+  animation: race 2s linear infinite;
+}
+
+@keyframes race {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
