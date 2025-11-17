@@ -20,27 +20,30 @@ body {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   color: white;
   padding: 20px 30px;
   border-radius: 15px;
-  border: 2px solid #ff6b6b;
+  border: 2px solid #3498db;
   font-size: 14px;
   z-index: 100;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .instructions h3 {
   margin: 0 0 10px 0;
   font-size: 20px;
-  color: #ff6b6b;
+  color: #3498db;
+  text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
 }
 
 .instructions p {
   margin: 5px 0;
   line-height: 1.6;
+  color: #ecf0f1;
 }
 
 .speedometer {
@@ -48,20 +51,22 @@ body {
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: #4ecdc4;
+  background: rgba(0, 0, 0, 0.85);
+  color: #2ecc71;
   padding: 15px 40px;
   border-radius: 50px;
   font-size: 16px;
   font-weight: bold;
   z-index: 100;
   pointer-events: none;
-  border: 2px solid #4ecdc4;
-  box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+  border: 2px solid #2ecc71;
+  box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .speedometer p {
   margin: 0;
+  text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
 }
 
 /* Loading animation */
@@ -70,7 +75,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* Optional: Add racing stripes to UI */
+/* Animated border */
 .instructions::before {
   content: '';
   position: absolute;
@@ -80,14 +85,28 @@ body {
   height: 3px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    #ff6b6b 20%, 
-    #4ecdc4 50%, 
-    #ff6b6b 80%, 
+    #3498db 20%, 
+    #2ecc71 50%, 
+    #3498db 80%, 
     transparent 100%);
-  animation: race 2s linear infinite;
+  animation: slide 3s linear infinite;
 }
 
-@keyframes race {
+@keyframes slide {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+
+/* Pulsing effect for speedometer */
+.speedometer {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(46, 204, 113, 0.6);
+  }
 }

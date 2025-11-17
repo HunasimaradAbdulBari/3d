@@ -3,41 +3,70 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
 
-function Player() {
+function Man() {
   const group = useRef()
   const { camera, gl } = useThree()
+  const [modelLoaded, setModelLoaded] = useState(false)
   
-  // Load the 3D model
-  const { scene, animations } = useGLTF('/models/person.glb')
+  // Load the 3D man model
+  let manScene = null
+  let animations = []
+  try {
+    const gltf = useGLTF('/models/man.glb', true)
+    manScene = gltf.scene
+    animations = gltf.animations || []
+    
+    console.log('✅ Man model loaded!')
+    console.log('Available animations:', animations.map(a => a.name))
+    
+    // Setup model
+    if (manScene) {
+      manScene = manScene.clone()
+      manScene.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true
+          child.receiveShadow = true
+        }
+      })
+      setModelLoaded(true)
+    }
+  } catch (error) {
+    console.error('❌ Man model error:', error)
+  }
+  
+  // Setup animations
   const { actions, mixer } = useAnimations(animations, group)
-  
-  // Player state
-  const [position, setPosition] = useState([0, 0, 0])
-  const [rotation, setRotation] = useState(0)
   
   // Movement state
   const velocity = useRef(new THREE.Vector3())
   const direction = useRef(new THREE.Vector3())
+  const speed = useRef(0)
+  const targetRotation = useRef(0)
+  const currentRotation = useRef(0)
+  
+  // Keyboard state
   const keys = useRef({
     forward: false,
     backward: false,
     left: false,
-    right: false
+    right: false,
+    shift: false  // For running
   })
   
-  // Mouse movement
+  // Mouse movement for camera
   const mouseMovement = useRef({ x: 0, y: 0 })
   const isPointerLocked = useRef(false)
   
   // Animation state
-  const currentAction = useRef('idle')
+  const currentAction = useRef(null)
   
-  // Constants
-  const MOVEMENT_SPEED = 0.05
-  const ROTATION_SPEED = 0.002
+  // Movement constants
+  const WALK_SPEED = 0.05
+  const RUN_SPEED = 0.12
+  const ROTATION_SPEED = 0.05
   const CAMERA_DISTANCE = 5
   const CAMERA_HEIGHT = 2
-  const DAMPING = 0.9
+  const DAMPING = 0.85
   
   // Setup pointer lock
   useEffect(() => {
@@ -47,9 +76,9 @@ function Player() {
     
     const handleMouseMove = (event) => {
       if (isPointerLocked.current) {
-        mouseMovement.current.x -= event.movementX * ROTATION_SPEED
-        mouseMovement.current.y -= event.movementY * ROTATION_SPEED
-        mouseMovement.current.y = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, mouseMovement.current.y))
+        mouseMovement.current.x -= event.movementX * 0.003
+        mouseMovement.current.y -= event.movementY * 0.003
+        mouseMovement.current.y = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, mouseMovement.current.y))
       }
     }
     
@@ -88,6 +117,10 @@ function Player() {
         case 'ArrowRight':
           keys.current.right = true
           break
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.shift = true
+          break
       }
     }
     
@@ -109,6 +142,10 @@ function Player() {
         case 'ArrowRight':
           keys.current.right = false
           break
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.shift = false
+          break
       }
     }
     
@@ -121,39 +158,34 @@ function Player() {
     }
   }, [])
   
-  // Find and setup animations
+  // Find animations by name patterns
+  const getAnimation = (patterns) => {
+    if (!actions) return null
+    const animNames = Object.keys(actions)
+    for (let pattern of patterns) {
+      const found = animNames.find(name => pattern.test(name))
+      if (found) return found
+    }
+    return animNames[0]
+  }
+  
+  // Start with idle animation
   useEffect(() => {
-    if (!actions) return
+    if (!actions || Object.keys(actions).length === 0) return
     
-    // Try to find idle and walk animations
-    const animationNames = Object.keys(actions)
-    
-    // Common animation name patterns
-    const idleAnim = animationNames.find(name => 
-      /idle/i.test(name) || /standing/i.test(name)
-    ) || animationNames[0]
-    
-    const walkAnim = animationNames.find(name => 
-      /walk/i.test(name) || /walking/i.test(name)
-    ) || animationNames[1]
-    
-    // Start with idle animation
+    const idleAnim = getAnimation([/idle/i, /standing/i, /stand/i])
     if (idleAnim && actions[idleAnim]) {
       actions[idleAnim].play()
       currentAction.current = idleAnim
+      console.log('🎬 Playing animation:', idleAnim)
     }
-    
-    console.log('Available animations:', animationNames)
-    console.log('Using idle:', idleAnim)
-    console.log('Using walk:', walkAnim)
-    
   }, [actions])
   
-  // Animation frame update
+  // Movement and animation loop
   useFrame((state, delta) => {
     if (!group.current) return
     
-    // Calculate movement direction
+    // Calculate movement direction (relative to view)
     direction.current.set(0, 0, 0)
     
     if (keys.current.forward) direction.current.z -= 1
@@ -161,82 +193,127 @@ function Player() {
     if (keys.current.left) direction.current.x -= 1
     if (keys.current.right) direction.current.x += 1
     
-    // Normalize direction
-    if (direction.current.length() > 0) {
+    const isMoving = direction.current.length() > 0
+    const isRunning = keys.current.shift && isMoving
+    
+    if (isMoving) {
       direction.current.normalize()
+      
+      // Apply camera rotation to movement
+      const cameraRotation = mouseMovement.current.x
+      direction.current.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation)
+      
+      // Set speed based on running or walking
+      const targetSpeed = isRunning ? RUN_SPEED : WALK_SPEED
+      speed.current = THREE.MathUtils.lerp(speed.current, targetSpeed, 0.1)
+      
+      // Calculate target rotation
+      targetRotation.current = Math.atan2(direction.current.x, direction.current.z)
+      
+      // Smooth rotation
+      currentRotation.current = THREE.MathUtils.lerp(
+        currentRotation.current,
+        targetRotation.current,
+        ROTATION_SPEED
+      )
+      
+      group.current.rotation.y = currentRotation.current
+      
+      // Update velocity
+      velocity.current.x = direction.current.x * speed.current
+      velocity.current.z = direction.current.z * speed.current
+    } else {
+      // Decelerate when not moving
+      speed.current *= DAMPING
+      velocity.current.multiplyScalar(DAMPING)
     }
-    
-    // Apply rotation to movement direction
-    const rotatedDirection = direction.current.clone()
-    rotatedDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), mouseMovement.current.x)
-    
-    // Update velocity with damping
-    velocity.current.x = rotatedDirection.x * MOVEMENT_SPEED
-    velocity.current.z = rotatedDirection.z * MOVEMENT_SPEED
-    velocity.current.multiplyScalar(DAMPING)
     
     // Update position
     const newPos = group.current.position.clone()
     newPos.add(velocity.current)
     
-    // Keep player in bounds
-    newPos.x = Math.max(-9, Math.min(9, newPos.x))
-    newPos.z = Math.max(-9, Math.min(9, newPos.z))
+    // Keep within bounds
+    newPos.x = Math.max(-23, Math.min(23, newPos.x))
+    newPos.z = Math.max(-23, Math.min(23, newPos.z))
     
     group.current.position.copy(newPos)
     
-    // Rotate player toward movement direction
-    if (direction.current.length() > 0) {
-      const targetRotation = Math.atan2(rotatedDirection.x, rotatedDirection.z)
-      group.current.rotation.y = THREE.MathUtils.lerp(
-        group.current.rotation.y,
-        targetRotation,
-        0.1
-      )
-    }
-    
     // Handle animations
-    const isMoving = direction.current.length() > 0
-    const animationNames = Object.keys(actions)
-    
-    const idleAnim = animationNames.find(name => /idle/i.test(name)) || animationNames[0]
-    const walkAnim = animationNames.find(name => /walk/i.test(name)) || animationNames[1]
-    
-    if (isMoving && walkAnim && currentAction.current !== walkAnim) {
-      // Switch to walk animation
-      if (actions[walkAnim] && actions[idleAnim]) {
-        actions[idleAnim].fadeOut(0.2)
-        actions[walkAnim].reset().fadeIn(0.2).play()
-        currentAction.current = walkAnim
+    if (actions && Object.keys(actions).length > 0) {
+      const idleAnim = getAnimation([/idle/i, /standing/i, /stand/i])
+      const walkAnim = getAnimation([/walk/i, /walking/i])
+      const runAnim = getAnimation([/run/i, /running/i, /jog/i])
+      
+      let targetAnim = idleAnim
+      
+      if (isMoving) {
+        if (isRunning && runAnim) {
+          targetAnim = runAnim
+        } else if (walkAnim) {
+          targetAnim = walkAnim
+        }
       }
-    } else if (!isMoving && idleAnim && currentAction.current !== idleAnim) {
-      // Switch to idle animation
-      if (actions[idleAnim] && actions[walkAnim]) {
-        actions[walkAnim].fadeOut(0.2)
-        actions[idleAnim].reset().fadeIn(0.2).play()
-        currentAction.current = idleAnim
+      
+      // Switch animation if needed
+      if (targetAnim && currentAction.current !== targetAnim) {
+        const prevAction = currentAction.current
+        
+        if (prevAction && actions[prevAction]) {
+          actions[prevAction].fadeOut(0.3)
+        }
+        
+        if (actions[targetAnim]) {
+          actions[targetAnim].reset().fadeIn(0.3).play()
+          currentAction.current = targetAnim
+          console.log('🎬 Switched to:', targetAnim)
+        }
+      }
+      
+      // Adjust animation speed for running
+      if (currentAction.current && actions[currentAction.current]) {
+        if (isRunning && runAnim === currentAction.current) {
+          actions[currentAction.current].setEffectiveTimeScale(1.2)
+        } else {
+          actions[currentAction.current].setEffectiveTimeScale(1.0)
+        }
       }
     }
     
-    // Camera follows player
+    // Camera follows character
     const idealOffset = new THREE.Vector3(0, CAMERA_HEIGHT, CAMERA_DISTANCE)
     idealOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), mouseMovement.current.x)
     
     const idealPosition = group.current.position.clone().add(idealOffset)
-    
     camera.position.lerp(idealPosition, 0.1)
     
-    // Camera looks at player with vertical offset
+    // Camera looks at character with vertical offset
     const lookAtPosition = group.current.position.clone()
-    lookAtPosition.y += 1
+    lookAtPosition.y += 1.5
     camera.lookAt(lookAtPosition)
   })
   
   return (
-    <group ref={group} position={position}>
-      <primitive object={scene} castShadow receiveShadow />
+    <group ref={group} position={[0, 0, 0]}>
+      {manScene ? (
+        <primitive object={manScene} scale={1} />
+      ) : (
+        // Fallback: Simple character
+        <group>
+          <mesh position={[0, 0.5, 0]} castShadow>
+            <boxGeometry args={[0.6, 1, 0.4]} />
+            <meshStandardMaterial color="#3498db" />
+          </mesh>
+          <mesh position={[0, 1.3, 0]} castShadow>
+            <sphereGeometry args={[0.3, 16, 16]} />
+            <meshStandardMaterial color="#f39c12" />
+          </mesh>
+        </group>
+      )}
     </group>
   )
 }
 
-export default Player
+// Preload the model
+useGLTF.preload('/models/man.glb')
+
+export default Man

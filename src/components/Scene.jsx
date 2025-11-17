@@ -1,6 +1,5 @@
 import React from 'react'
 import { Sky } from '@react-three/drei'
-import Room from './Room'
 import Car from './Car'
 
 function Scene() {
@@ -38,8 +37,38 @@ function Scene() {
         rayleigh={2}
       />
 
-      {/* Room and Car */}
-      <Room />
+      {/* Ground/Floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[50, 50]} />
+        <meshStandardMaterial color="#2d2d2d" />
+      </mesh>
+
+      {/* Walls to create room */}
+      {/* Back wall */}
+      <mesh position={[0, 5, -25]} receiveShadow>
+        <boxGeometry args={[50, 10, 0.5]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      
+      {/* Front wall */}
+      <mesh position={[0, 5, 25]} receiveShadow>
+        <boxGeometry args={[50, 10, 0.5]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      
+      {/* Left wall */}
+      <mesh position={[-25, 5, 0]} receiveShadow>
+        <boxGeometry args={[0.5, 10, 50]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      
+      {/* Right wall */}
+      <mesh position={[25, 5, 0]} receiveShadow>
+        <boxGeometry args={[0.5, 10, 50]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+
+      {/* Car */}
       <Car />
       
       {/* Fog for depth */}
