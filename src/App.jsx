@@ -20,37 +20,37 @@ function App() {
         </Suspense>
       </Canvas>
       
-      {/* Debug panel */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        background: 'rgba(0,0,0,0.8)',
-        color: '#0f0',
-        padding: '15px',
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        borderRadius: '8px',
-        zIndex: 1000,
-        maxWidth: '300px'
-      }}>
-        {/* <div>🔍 Debug Info:</div>
-        <div>• Check browser console (F12)</div>
-        <div>• Model path: /models/car.glb</div>
-        <div>• Look for 404 errors</div> */}
-      </div>
-      
+      {/* Instructions Overlay */}
       {/* <div className="instructions">
-        <h3>🚗 Car Controls</h3>
-        <p>Click to lock mouse</p>
-        <p>W / ↑ - Accelerate</p>
-        <p>S / ↓ - Brake / Reverse</p>
-        <p>A / ← - Steer Left</p>
-        <p>D / → - Steer Right</p>
-        <p>Move Mouse - Look Around</p>
+        <h3>🏃 Running Man Controls</h3>
+        <p>Click canvas to lock mouse</p>
+        <p><strong>W / ↑</strong> - Move Forward</p>
+        <p><strong>S / ↓</strong> - Move Backward</p>
+        <p><strong>A / ←</strong> - Move Left</p>
+        <p><strong>D / →</strong> - Move Right</p>
+        <p><strong>Shift</strong> - Run (hold while moving)</p>
+        <p><strong>Mouse</strong> - Look Around</p>
+        <p><strong>ESC</strong> - Release Mouse</p>
       </div> */}
-      {/* <div className="speedometer">
-        <p>🏁 Drive around the room!</p>
+      
+      {/* Model Status */}
+      {/* <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'rgba(0,0,0,0.85)',
+        color: '#2ecc71',
+        padding: '12px 30px',
+        borderRadius: '50px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        zIndex: 100,
+        border: '2px solid #2ecc71',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 4px 20px rgba(46, 204, 113, 0.4)'
+      }}>
+        📍 Model: /models/man.glb | Press F12 for console logs
       </div> */}
     </div>
   )

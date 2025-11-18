@@ -1,11 +1,12 @@
 import React from 'react'
 import { Sky } from '@react-three/drei'
-import Car from './Car'
+import Room from './Room'
+import Man from './Man'
 
 function Scene() {
   return (
     <>
-      {/* Lighting - Brighter for car visibility */}
+      {/* Lighting */}
       <ambientLight intensity={0.6} />
       <directionalLight
         position={[20, 30, 20]}
@@ -21,13 +22,19 @@ function Scene() {
       />
       <pointLight position={[0, 8, 0]} intensity={0.4} />
       
-      {/* Additional spotlight on car area */}
+      {/* Additional lights for better visibility */}
       <spotLight
         position={[0, 15, 0]}
-        angle={0.3}
+        angle={0.5}
         penumbra={0.5}
         intensity={0.5}
         castShadow
+      />
+      
+      <hemisphereLight
+        skyColor="#87CEEB"
+        groundColor="#444444"
+        intensity={0.4}
       />
 
       {/* Sky */}
@@ -37,42 +44,14 @@ function Scene() {
         rayleigh={2}
       />
 
-      {/* Ground/Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[50, 50]} />
-        <meshStandardMaterial color="#2d2d2d" />
-      </mesh>
-
-      {/* Walls to create room */}
-      {/* Back wall */}
-      <mesh position={[0, 5, -25]} receiveShadow>
-        <boxGeometry args={[50, 10, 0.5]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
+      {/* Room with reflective floor */}
+      <Room />
       
-      {/* Front wall */}
-      <mesh position={[0, 5, 25]} receiveShadow>
-        <boxGeometry args={[50, 10, 0.5]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      
-      {/* Left wall */}
-      <mesh position={[-25, 5, 0]} receiveShadow>
-        <boxGeometry args={[0.5, 10, 50]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      
-      {/* Right wall */}
-      <mesh position={[25, 5, 0]} receiveShadow>
-        <boxGeometry args={[0.5, 10, 50]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-
-      {/* Car */}
-      <Car />
+      {/* Man character */}
+      <Man />
       
       {/* Fog for depth */}
-      <fog attach="fog" args={['#222', 30, 80]} />
+      <fog attach="fog" args={['#1a1a1a', 35, 70]} />
     </>
   )
 }
