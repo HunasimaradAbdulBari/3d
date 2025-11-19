@@ -14,6 +14,9 @@ function ManModel() {
   // Movement state
   const velocity = useRef(new THREE.Vector3(0, 0, 0))
   const speed = useRef(0)
+  const jumpVelocity = useRef(0)
+  const isJumping = useRef(false)
+  const isGrounded = useRef(true)
   
   // Keyboard state
   const keys = useRef({
@@ -21,7 +24,8 @@ function ManModel() {
     backward: false,
     left: false,
     right: false,
-    shift: false
+    shift: false,
+    space: false
   })
   
   // Camera control
@@ -30,12 +34,16 @@ function ManModel() {
   
   // Animation state
   const currentAnim = useRef(null)
+  const standingFrame = useRef(0)  // Store the perfect standing frame
   
   // Constants
   const WALK_SPEED = 0.08
   const RUN_SPEED = 0.16
   const CAMERA_DISTANCE = 6
   const CAMERA_HEIGHT = 2.5
+  const JUMP_FORCE = 0.25
+  const GRAVITY = 0.015
+  const GROUND_LEVEL = 0
   
   // Log model info
   useEffect(() => {
@@ -83,7 +91,7 @@ function ManModel() {
     }
   }, [gl])
   
-  // Keyboard
+  // Keyboard for movement + frame testing
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
@@ -106,6 +114,56 @@ function ManModel() {
         keys.current.shift = true
         console.log('🏃 Running')
       }
+      if (e.code === 'Space') {
+        // Jump only if on ground (GTA Vice City style)
+        if (isGrounded.current && !isJumping.current) {
+          isJumping.current = true
+          jumpVelocity.current = JUMP_FORCE
+          isGrounded.current = false
+          console.log('🦘 JUMP!')
+        }
+        e.preventDefault() // Prevent page scroll
+      }
+      
+      // Frame testing keys (1-8) - ONLY when standing still
+      if (currentAnim.current && actions && actions[currentAnim.current]) {
+        const clip = actions[currentAnim.current].getClip()
+        const duration = clip.duration
+        
+        if (e.code === 'Digit1') {
+          standingFrame.current = 0
+          console.log('🦵 Testing Frame: 0% (start)')
+        } else if (e.code === 'Digit2') {
+          standingFrame.current = duration * 0.125
+          console.log('🦵 Testing Frame: 12.5%')
+        } else if (e.code === 'Digit3') {
+          standingFrame.current = duration * 0.25
+          console.log('🦵 Testing Frame: 25%')
+        } else if (e.code === 'Digit4') {
+          standingFrame.current = duration * 0.375
+          console.log('🦵 Testing Frame: 37.5%')
+        } else if (e.code === 'Digit5') {
+          standingFrame.current = duration * 0.5
+          console.log('🦵 Testing Frame: 50% (mid-cycle)')
+        } else if (e.code === 'Digit6') {
+          standingFrame.current = duration * 0.625
+          console.log('🦵 Testing Frame: 62.5%')
+        } else if (e.code === 'Digit7') {
+          standingFrame.current = duration * 0.75
+          console.log('🦵 Testing Frame: 75%')
+        } else if (e.code === 'Digit8') {
+          standingFrame.current = duration * 0.875
+          console.log('🦵 Testing Frame: 87.5%')
+        }
+        
+        // Apply the frame immediately if standing still
+        if (speed.current < 0.01) {
+          actions[currentAnim.current].time = standingFrame.current
+          actions[currentAnim.current].paused = true
+          console.log('✅ Applied! Check if both legs are on ground now.')
+          console.log('💡 If not perfect, try another number (1-8)')
+        }
+      }
     }
     
     const onKeyUp = (e) => {
@@ -123,9 +181,9 @@ function ManModel() {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [])
+  }, [actions])
   
-  // Start with idle animation - both legs on ground
+  // Start with idle animation - PAUSED initially
   useEffect(() => {
     if (!actions || Object.keys(actions).length === 0) {
       console.log('⚠️ No animations found in model')
@@ -141,12 +199,57 @@ function ManModel() {
       /standing/i.test(n) || 
       /stand/i.test(n) ||
       /rest/i.test(n)
-    ) || animNames[0]
+    )
     
+    // If idle exists, play it
     if (idle && actions[idle]) {
       actions[idle].play()
       currentAnim.current = idle
       console.log('🎬 Playing IDLE animation (legs on ground):', idle)
+    } else {
+      // No idle animation - find the perfect standing frame
+      const firstAnim = animNames[0]
+      if (firstAnim && actions[firstAnim]) {
+        const clip = actions[firstAnim].getClip()
+        const duration = clip.duration
+        
+        console.log('🔍 FINDING PERFECT STANDING FRAME...')
+        console.log('📊 Animation duration:', duration.toFixed(2), 'seconds')
+        
+        // Running animations typically have both feet on ground at specific points
+        // For running man: usually at 0%, 50% of the cycle
+        
+        // Test different frames
+        const testFrames = [
+          { percent: 0, time: 0 },
+          { percent: 12.5, time: duration * 0.125 },
+          { percent: 25, time: duration * 0.25 },
+          { percent: 37.5, time: duration * 0.375 },
+          { percent: 50, time: duration * 0.5 },
+          { percent: 62.5, time: duration * 0.625 },
+          { percent: 75, time: duration * 0.75 },
+          { percent: 87.5, time: duration * 0.875 }
+        ]
+        
+        console.log('🦵 Try these frames to find both legs on ground:')
+        testFrames.forEach(frame => {
+          console.log(`  - ${frame.percent}%: time = ${frame.time.toFixed(3)}`)
+        })
+        
+        // For most running animations, 50% is usually the best (mid-stride both feet down)
+        // But let's try 0% first (start position)
+        standingFrame.current = 0  // Start with frame 0
+        
+        actions[firstAnim].play()
+        actions[firstAnim].time = standingFrame.current
+        actions[firstAnim].paused = true
+        currentAnim.current = firstAnim
+        
+        console.log('✅ Currently using: 0% (frame 0)')
+        console.log('💡 TO FIX LEGS: Press numbers 1-8 to try different frames!')
+        console.log('   1 = 0%   | 2 = 12.5% | 3 = 25%  | 4 = 37.5%')
+        console.log('   5 = 50%  | 6 = 62.5% | 7 = 75%  | 8 = 87.5%')
+      }
     }
   }, [actions])
   
@@ -199,6 +302,25 @@ function ManModel() {
     pos.x += velocity.current.x
     pos.z += velocity.current.z
     
+    // Jump physics (GTA Vice City style)
+    if (isJumping.current || !isGrounded.current) {
+      // Apply gravity
+      jumpVelocity.current -= GRAVITY
+      pos.y += jumpVelocity.current
+      
+      // Check if landed on ground
+      if (pos.y <= GROUND_LEVEL) {
+        pos.y = GROUND_LEVEL
+        jumpVelocity.current = 0
+        isJumping.current = false
+        isGrounded.current = true
+        console.log('✅ Landed on ground')
+      }
+    } else {
+      // Make sure character stays on ground
+      pos.y = GROUND_LEVEL
+    }
+    
     // Bounds
     pos.x = Math.max(-23, Math.min(23, pos.x))
     pos.z = Math.max(-23, Math.min(23, pos.z))
@@ -240,41 +362,71 @@ function ManModel() {
         }
       } else {
         // Character is NOT moving or speed is too low
-        target = idle  // Force IDLE - both legs on ground
+        // For running man models: PAUSE animation, don't switch to idle
+        target = currentAnim.current  // Keep current animation but we'll pause it below
       }
       
-      // Switch animation with smooth crossfade
-      if (target && currentAnim.current !== target) {
-        // Fade out current animation
-        if (currentAnim.current && actions[currentAnim.current]) {
-          actions[currentAnim.current].fadeOut(0.15)
-        }
-        
-        // Fade in new animation
-        if (actions[target]) {
-          actions[target].reset().fadeIn(0.15).play()
-          currentAnim.current = target
+      // CRITICAL: Control animation playback based on movement
+      if (actuallyMoving) {
+        // Character IS moving - play animation
+        if (target && currentAnim.current !== target) {
+          // Switch to movement animation
+          if (currentAnim.current && actions[currentAnim.current]) {
+            actions[currentAnim.current].fadeOut(0.15)
+          }
           
-          if (target === idle) {
-            console.log('🧍 STOPPED - Legs on ground, NO movement')
-          } else if (target === walk) {
-            console.log('🚶 WALKING - Legs moving')
-          } else if (target === run) {
-            console.log('🏃 RUNNING - Legs moving fast')
+          if (actions[target]) {
+            actions[target].reset().fadeIn(0.15).play()
+            currentAnim.current = target
+            
+            if (target === walk) {
+              console.log('🚶 WALKING - Legs moving')
+            } else if (target === run) {
+              console.log('🏃 RUNNING - Legs moving fast')
+            }
           }
         }
-      }
-      
-      // Adjust animation speed based on actual movement speed
-      if (currentAnim.current && actions[currentAnim.current]) {
-        if (actuallyMoving) {
-          // Match animation speed to movement speed
+        
+        // Make sure animation is playing and match speed to movement
+        if (currentAnim.current && actions[currentAnim.current]) {
+          // Resume animation if it was paused
+          if (actions[currentAnim.current].paused) {
+            actions[currentAnim.current].paused = false
+            console.log('▶️ RESUMED - Animation playing again')
+          }
+          
+          if (!actions[currentAnim.current].isRunning()) {
+            actions[currentAnim.current].play()
+          }
+          
           const speedRatio = speed.current / (running ? RUN_SPEED : WALK_SPEED)
           const animSpeed = Math.max(0.5, Math.min(1.5, speedRatio * (running ? 1.2 : 1.0)))
           actions[currentAnim.current].setEffectiveTimeScale(animSpeed)
-        } else {
-          // Force idle animation to play at normal speed
-          actions[currentAnim.current].setEffectiveTimeScale(1.0)
+        }
+        
+      } else {
+        // Character NOT moving - STOP/PAUSE all animations (GTA style)
+        if (currentAnim.current && actions[currentAnim.current]) {
+          // Stop the animation completely - legs freeze on ground
+          if (actions[currentAnim.current].isRunning() || !actions[currentAnim.current].paused) {
+            actions[currentAnim.current].paused = true
+            
+            // Use the standing frame we found (adjusted with number keys 1-8)
+            actions[currentAnim.current].time = standingFrame.current
+            
+            console.log('🧍 STOPPED - Animation PAUSED at frame:', standingFrame.current.toFixed(3))
+            console.log('💡 Not perfect? Press 1-8 to find frame with both legs on ground')
+          }
+        }
+        
+        // Also try idle animation if it exists
+        if (idle && actions[idle] && currentAnim.current !== idle) {
+          if (currentAnim.current && actions[currentAnim.current]) {
+            actions[currentAnim.current].stop()
+          }
+          actions[idle].play()
+          currentAnim.current = idle
+          console.log('🧍 IDLE - Standing still')
         }
       }
     }
