@@ -7,8 +7,8 @@ function ManModel() {
   const group = useRef()
   const { camera, gl } = useThree()
   
-  // Load new model - change filename here
-  const { scene, animations } = useGLTF('/models/man (2).glb')
+  // Load model - this will throw error if file doesn't exist
+  const { scene, animations } = useGLTF('/models/man.glb')
   const { actions } = useAnimations(animations, group)
   
   // Movement state
@@ -34,13 +34,7 @@ function ManModel() {
   
   // Animation state
   const currentAnim = useRef(null)
-  const standingFrame = useRef(0)
-  
-  // MANUAL SCALE CONTROL - Adjust this to make model smaller/larger
-  const MANUAL_SCALE = 0.01  // Start very small and increase if needed
-  // Try these values: 0.01 (tiny), 0.05 (small), 0.1 (medium), 0.2 (large)
-  
-  const modelScale = useRef(MANUAL_SCALE)
+  const standingFrame = useRef(0)  // Store the perfect standing frame
   
   // Constants
   const WALK_SPEED = 0.08
@@ -51,36 +45,21 @@ function ManModel() {
   const GRAVITY = 0.015
   const GROUND_LEVEL = 0
   
-  // Log model info on load
+  // Log model info
   useEffect(() => {
-    if (!scene) return
-    
-    console.log('✅ New model loaded: man (2).glb')
-    console.log('🔧 Manual scale applied:', MANUAL_SCALE)
-    console.log('💡 Model too big? Decrease MANUAL_SCALE in code')
-    console.log('💡 Model too small? Increase MANUAL_SCALE in code')
-    
-    // Calculate actual size
-    const box = new THREE.Box3().setFromObject(scene)
-    const size = new THREE.Vector3()
-    box.getSize(size)
-    
-    console.log('📏 Original dimensions:', {
-      height: size.y.toFixed(2),
-      width: size.x.toFixed(2),
-      depth: size.z.toFixed(2)
-    })
-    console.log('📐 Scaled height will be:', (size.y * MANUAL_SCALE).toFixed(2), 'units')
-    
-    // Apply properties
-    scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true
-        child.receiveShadow = true
-      }
-    })
-    
+    console.log('✅ Model loaded successfully!')
+    console.log('Scene:', scene)
     console.log('Animations:', animations?.map(a => a.name))
+    
+    // Set model properties
+    if (scene) {
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true
+          child.receiveShadow = true
+        }
+      })
+    }
   }, [scene, animations])
   
   // Pointer lock
@@ -112,7 +91,7 @@ function ManModel() {
     }
   }, [gl])
   
-  // Keyboard controls
+  // Keyboard for movement + frame testing
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
@@ -136,33 +115,53 @@ function ManModel() {
         console.log('🏃 Running')
       }
       if (e.code === 'Space') {
+        // Jump only if on ground (GTA Vice City style)
         if (isGrounded.current && !isJumping.current) {
           isJumping.current = true
           jumpVelocity.current = JUMP_FORCE
           isGrounded.current = false
           console.log('🦘 JUMP!')
         }
-        e.preventDefault()
+        e.preventDefault() // Prevent page scroll
       }
       
-      // Frame testing (1-8)
+      // Frame testing keys (1-8) - ONLY when standing still
       if (currentAnim.current && actions && actions[currentAnim.current]) {
         const clip = actions[currentAnim.current].getClip()
         const duration = clip.duration
         
-        if (e.code === 'Digit1') standingFrame.current = 0
-        else if (e.code === 'Digit2') standingFrame.current = duration * 0.125
-        else if (e.code === 'Digit3') standingFrame.current = duration * 0.25
-        else if (e.code === 'Digit4') standingFrame.current = duration * 0.375
-        else if (e.code === 'Digit5') standingFrame.current = duration * 0.5
-        else if (e.code === 'Digit6') standingFrame.current = duration * 0.625
-        else if (e.code === 'Digit7') standingFrame.current = duration * 0.75
-        else if (e.code === 'Digit8') standingFrame.current = duration * 0.875
+        if (e.code === 'Digit1') {
+          standingFrame.current = 0
+          console.log('🦵 Testing Frame: 0% (start)')
+        } else if (e.code === 'Digit2') {
+          standingFrame.current = duration * 0.125
+          console.log('🦵 Testing Frame: 12.5%')
+        } else if (e.code === 'Digit3') {
+          standingFrame.current = duration * 0.25
+          console.log('🦵 Testing Frame: 25%')
+        } else if (e.code === 'Digit4') {
+          standingFrame.current = duration * 0.375
+          console.log('🦵 Testing Frame: 37.5%')
+        } else if (e.code === 'Digit5') {
+          standingFrame.current = duration * 0.5
+          console.log('🦵 Testing Frame: 50% (mid-cycle)')
+        } else if (e.code === 'Digit6') {
+          standingFrame.current = duration * 0.625
+          console.log('🦵 Testing Frame: 62.5%')
+        } else if (e.code === 'Digit7') {
+          standingFrame.current = duration * 0.75
+          console.log('🦵 Testing Frame: 75%')
+        } else if (e.code === 'Digit8') {
+          standingFrame.current = duration * 0.875
+          console.log('🦵 Testing Frame: 87.5%')
+        }
         
-        if (e.code.startsWith('Digit') && speed.current < 0.01) {
+        // Apply the frame immediately if standing still
+        if (speed.current < 0.01) {
           actions[currentAnim.current].time = standingFrame.current
           actions[currentAnim.current].paused = true
-          console.log('🦵 Frame:', standingFrame.current.toFixed(3))
+          console.log('✅ Applied! Check if both legs are on ground now.')
+          console.log('💡 If not perfect, try another number (1-8)')
         }
       }
     }
@@ -184,16 +183,17 @@ function ManModel() {
     }
   }, [actions])
   
-  // Initialize animation
+  // Start with idle animation - PAUSED initially
   useEffect(() => {
     if (!actions || Object.keys(actions).length === 0) {
-      console.log('⚠️ No animations found')
+      console.log('⚠️ No animations found in model')
       return
     }
     
     const animNames = Object.keys(actions)
     console.log('🎬 Available animations:', animNames)
     
+    // Find idle/standing animation (both legs on ground)
     const idle = animNames.find(n => 
       /idle/i.test(n) || 
       /standing/i.test(n) || 
@@ -201,20 +201,54 @@ function ManModel() {
       /rest/i.test(n)
     )
     
+    // If idle exists, play it
     if (idle && actions[idle]) {
       actions[idle].play()
       currentAnim.current = idle
-      console.log('🎬 Playing IDLE:', idle)
+      console.log('🎬 Playing IDLE animation (legs on ground):', idle)
     } else {
+      // No idle animation - find the perfect standing frame
       const firstAnim = animNames[0]
       if (firstAnim && actions[firstAnim]) {
-        standingFrame.current = 0
+        const clip = actions[firstAnim].getClip()
+        const duration = clip.duration
+        
+        console.log('🔍 FINDING PERFECT STANDING FRAME...')
+        console.log('📊 Animation duration:', duration.toFixed(2), 'seconds')
+        
+        // Running animations typically have both feet on ground at specific points
+        // For running man: usually at 0%, 50% of the cycle
+        
+        // Test different frames
+        const testFrames = [
+          { percent: 0, time: 0 },
+          { percent: 12.5, time: duration * 0.125 },
+          { percent: 25, time: duration * 0.25 },
+          { percent: 37.5, time: duration * 0.375 },
+          { percent: 50, time: duration * 0.5 },
+          { percent: 62.5, time: duration * 0.625 },
+          { percent: 75, time: duration * 0.75 },
+          { percent: 87.5, time: duration * 0.875 }
+        ]
+        
+        console.log('🦵 Try these frames to find both legs on ground:')
+        testFrames.forEach(frame => {
+          console.log(`  - ${frame.percent}%: time = ${frame.time.toFixed(3)}`)
+        })
+        
+        // For most running animations, 50% is usually the best (mid-stride both feet down)
+        // But let's try 0% first (start position)
+        standingFrame.current = 0  // Start with frame 0
+        
         actions[firstAnim].play()
         actions[firstAnim].time = standingFrame.current
         actions[firstAnim].paused = true
         currentAnim.current = firstAnim
         
-        console.log('💡 Press 1-8 to find perfect standing frame')
+        console.log('✅ Currently using: 0% (frame 0)')
+        console.log('💡 TO FIX LEGS: Press numbers 1-8 to try different frames!')
+        console.log('   1 = 0%   | 2 = 12.5% | 3 = 25%  | 4 = 37.5%')
+        console.log('   5 = 50%  | 6 = 62.5% | 7 = 75%  | 8 = 87.5%')
       }
     }
   }, [actions])
@@ -230,9 +264,10 @@ function ManModel() {
     if (keys.current.left) dir.x -= 1
     if (keys.current.right) dir.x += 1
     
+    // Check if ACTUALLY moving (not just keys pressed)
     const moving = dir.length() > 0
     const running = keys.current.shift && moving
-    const actuallyMoving = speed.current > 0.01
+    const actuallyMoving = speed.current > 0.01  // Real movement check
     
     if (moving) {
       dir.normalize()
@@ -243,6 +278,7 @@ function ManModel() {
       
       velocity.current.set(dir.x * speed.current, 0, dir.z * speed.current)
       
+      // Rotate character to face movement direction
       const angle = Math.atan2(dir.x, dir.z)
       let diff = angle - group.current.rotation.y
       while (diff > Math.PI) diff -= Math.PI * 2
@@ -250,9 +286,11 @@ function ManModel() {
       group.current.rotation.y += diff * 0.1
       
     } else {
+      // Smooth stop when keys released - back to IDLE with legs on ground
       speed.current *= 0.85
       velocity.current.multiplyScalar(0.85)
       
+      // Complete stop when very slow (IMPORTANT for animation)
       if (speed.current < 0.01) {
         speed.current = 0
         velocity.current.set(0, 0, 0)
@@ -264,18 +302,22 @@ function ManModel() {
     pos.x += velocity.current.x
     pos.z += velocity.current.z
     
-    // Jump physics
+    // Jump physics (GTA Vice City style)
     if (isJumping.current || !isGrounded.current) {
+      // Apply gravity
       jumpVelocity.current -= GRAVITY
       pos.y += jumpVelocity.current
       
+      // Check if landed on ground
       if (pos.y <= GROUND_LEVEL) {
         pos.y = GROUND_LEVEL
         jumpVelocity.current = 0
         isJumping.current = false
         isGrounded.current = true
+        console.log('✅ Landed on ground')
       }
     } else {
+      // Make sure character stays on ground
       pos.y = GROUND_LEVEL
     }
     
@@ -283,10 +325,11 @@ function ManModel() {
     pos.x = Math.max(-23, Math.min(23, pos.x))
     pos.z = Math.max(-23, Math.min(23, pos.z))
     
-    // Animation system
+    // Animation system - ONLY run/walk when SPEED > 0
     if (actions && Object.keys(actions).length > 0) {
       const animNames = Object.keys(actions)
       
+      // Find all animation types
       const idle = animNames.find(n => 
         /idle/i.test(n) || 
         /standing/i.test(n) || 
@@ -305,22 +348,29 @@ function ManModel() {
         /jog/i.test(n)
       )
       
-      let target = idle
+      let target = idle  // Default: IDLE (legs on ground)
       
+      // CRITICAL: Only play movement animations if speed is above threshold
       if (actuallyMoving) {
+        // Character is ACTUALLY moving with real speed
         if (running && run) {
-          target = run
+          target = run  // Running animation
         } else if (walk) {
-          target = walk
+          target = walk  // Walking animation
         } else if (run) {
-          target = run
+          target = run  // Use run as fallback
         }
       } else {
-        target = currentAnim.current
+        // Character is NOT moving or speed is too low
+        // For running man models: PAUSE animation, don't switch to idle
+        target = currentAnim.current  // Keep current animation but we'll pause it below
       }
       
+      // CRITICAL: Control animation playback based on movement
       if (actuallyMoving) {
+        // Character IS moving - play animation
         if (target && currentAnim.current !== target) {
+          // Switch to movement animation
           if (currentAnim.current && actions[currentAnim.current]) {
             actions[currentAnim.current].fadeOut(0.15)
           }
@@ -328,12 +378,21 @@ function ManModel() {
           if (actions[target]) {
             actions[target].reset().fadeIn(0.15).play()
             currentAnim.current = target
+            
+            if (target === walk) {
+              console.log('🚶 WALKING - Legs moving')
+            } else if (target === run) {
+              console.log('🏃 RUNNING - Legs moving fast')
+            }
           }
         }
         
+        // Make sure animation is playing and match speed to movement
         if (currentAnim.current && actions[currentAnim.current]) {
+          // Resume animation if it was paused
           if (actions[currentAnim.current].paused) {
             actions[currentAnim.current].paused = false
+            console.log('▶️ RESUMED - Animation playing again')
           }
           
           if (!actions[currentAnim.current].isRunning()) {
@@ -346,19 +405,28 @@ function ManModel() {
         }
         
       } else {
+        // Character NOT moving - STOP/PAUSE all animations (GTA style)
         if (currentAnim.current && actions[currentAnim.current]) {
+          // Stop the animation completely - legs freeze on ground
           if (actions[currentAnim.current].isRunning() || !actions[currentAnim.current].paused) {
             actions[currentAnim.current].paused = true
+            
+            // Use the standing frame we found (adjusted with number keys 1-8)
             actions[currentAnim.current].time = standingFrame.current
+            
+            console.log('🧍 STOPPED - Animation PAUSED at frame:', standingFrame.current.toFixed(3))
+            console.log('💡 Not perfect? Press 1-8 to find frame with both legs on ground')
           }
         }
         
+        // Also try idle animation if it exists
         if (idle && actions[idle] && currentAnim.current !== idle) {
           if (currentAnim.current && actions[currentAnim.current]) {
             actions[currentAnim.current].stop()
           }
           actions[idle].play()
           currentAnim.current = idle
+          console.log('🧍 IDLE - Standing still')
         }
       }
     }
@@ -379,13 +447,12 @@ function ManModel() {
   
   return (
     <group ref={group} position={[0, 0, 0]}>
-      {/* Apply calculated scale to the model */}
-      <primitive object={scene} scale={modelScale.current} />
+      <primitive object={scene} scale={1} />
     </group>
   )
 }
 
-// Fallback component (unchanged)
+// Fallback component
 function FallbackCharacter() {
   const group = useRef()
   const { camera, gl } = useThree()
@@ -484,16 +551,16 @@ function FallbackCharacter() {
   )
 }
 
-// Main component
+// Main component with error boundary
 function Man() {
   const [hasError, setHasError] = React.useState(false)
   
   React.useEffect(() => {
-    console.log('🔍 Loading model: /models/man (2).glb')
+    console.log('🔍 Checking for model at: /models/man.glb')
   }, [])
   
   if (hasError) {
-    console.error('❌ Model failed - using fallback')
+    console.error('❌ Model failed to load - using fallback')
     return <FallbackCharacter />
   }
   
@@ -506,7 +573,7 @@ function Man() {
   )
 }
 
-// Preload the new model
-useGLTF.preload('/models/man (2).glb')
+// Preload
+useGLTF.preload('/models/man.glb')
 
 export default Man
