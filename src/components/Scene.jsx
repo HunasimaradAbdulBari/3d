@@ -1,16 +1,34 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { Sky } from '@react-three/drei'
 import Room from './Room'
 import Man from './Man'
+import PoliceCar from './PoliceCar'
 
 function Scene() {
+  const carRef = useRef()
+  const manRef = useRef()
+  const [isInCar, setIsInCar] = useState(false)
+  const [playerPosition, setPlayerPosition] = useState([0, 0, 0])
+  
+  const handleEnterCar = () => {
+    console.log('🚗 Player entering car')
+    setIsInCar(true)
+  }
+  
+  const handleExitCar = () => {
+    console.log('🚪 Player exiting car')
+    setIsInCar(false)
+  }
+  
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.6} />
+      {/* Professional Studio Lighting */}
+      <ambientLight intensity={0.5} />
+      
+      {/* Main Light */}
       <directionalLight
-        position={[20, 30, 20]}
-        intensity={1.2}
+        position={[10, 20, 10]}
+        intensity={1.5}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -20,9 +38,14 @@ function Scene() {
         shadow-camera-top={50}
         shadow-camera-bottom={-50}
       />
-      <pointLight position={[0, 8, 0]} intensity={0.4} />
       
-      {/* Additional lights for better visibility */}
+      {/* Fill Light */}
+      <directionalLight
+        position={[-10, 10, -10]}
+        intensity={0.3}
+      />
+      
+      {/* Rim Light */}
       <spotLight
         position={[0, 15, 0]}
         angle={0.5}
@@ -30,28 +53,38 @@ function Scene() {
         intensity={0.5}
         castShadow
       />
-      
-      <hemisphereLight
-        skyColor="#87CEEB"
-        groundColor="#444444"
-        intensity={0.4}
-      />
 
-      {/* Sky */}
+      {/* Beautiful Sky */}
       <Sky 
         sunPosition={[100, 20, 100]} 
         turbidity={8}
         rayleigh={2}
       />
 
-      {/* Room with reflective floor */}
+      {/* Room */}
       <Room />
       
-      {/* Man character */}
-      <Man />
+      {/* Police Car */}
+      <PoliceCar
+        ref={carRef}
+        position={[5, 0, 5]}
+        onPlayerEnter={handleEnterCar}
+        onPlayerExit={handleExitCar}
+        isPlayerInside={isInCar}
+        playerPosition={playerPosition}
+      />
       
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#1a1a1a', 35, 70]} />
+      {/* Character */}
+      <Man 
+        ref={manRef}
+        isInCar={isInCar}
+        carRef={carRef}
+        onEnterCar={handleEnterCar}
+        onExitCar={handleExitCar}
+      />
+      
+      {/* Subtle Fog */}
+      <fog attach="fog" args={['#0a0a0a', 40, 80]} />
     </>
   )
 }

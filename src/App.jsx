@@ -10,47 +10,47 @@ function App() {
         shadows
         camera={{ position: [0, 5, 15], fov: 60 }}
         gl={{ antialias: true }}
-        onCreated={({ gl }) => {
-          console.log('✅ Canvas created successfully')
-          console.log('WebGL Renderer:', gl)
-        }}
       >
         <Suspense fallback={<Loader />}>
           <Scene />
         </Suspense>
       </Canvas>
       
-      {/* Instructions Overlay */}
-      {/* <div className="instructions">
-        <h3>🏃 Running Man Controls</h3>
-        <p>Click canvas to lock mouse</p>
-        <p><strong>W / ↑</strong> - Move Forward</p>
-        <p><strong>S / ↓</strong> - Move Backward</p>
-        <p><strong>A / ←</strong> - Move Left</p>
-        <p><strong>D / →</strong> - Move Right</p>
-        <p><strong>Shift</strong> - Run (hold while moving)</p>
-        <p><strong>Mouse</strong> - Look Around</p>
-        <p><strong>ESC</strong> - Release Mouse</p>
+      {/* Beautiful Modern UI */}
+      {/* <div className="controls-panel">
+        <div className="control-group">
+          <div className="control-title">🚶 On Foot</div>
+          <div className="control-item"><kbd>W A S D</kbd> Move</div>
+          <div className="control-item"><kbd>Shift</kbd> Run</div>
+          <div className="control-item"><kbd>Space</kbd> Jump</div>
+          <div className="control-item"><kbd>F</kbd> Enter Car</div>
+        </div>
+        
+        <div className="control-group">
+          <div className="control-title">🚗 In Car</div>
+          <div className="control-item"><kbd>W</kbd> Accelerate</div>
+          <div className="control-item"><kbd>S</kbd> Brake/Reverse</div>
+          <div className="control-item"><kbd>A D</kbd> Steer</div>
+          <div className="control-item"><kbd>F</kbd> Exit Car</div>
+        </div>
+        
+        <div className="control-group">
+          <div className="control-title">🖱️ Camera</div>
+          <div className="control-item"><kbd>Click</kbd> Lock Mouse</div>
+          <div className="control-item"><kbd>Mouse</kbd> Look Around</div>
+          <div className="control-item"><kbd>ESC</kbd> Release</div>
+        </div>
       </div> */}
-      
-      {/* Model Status */}
-      {/* <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(0,0,0,0.85)',
-        color: '#2ecc71',
-        padding: '12px 30px',
-        borderRadius: '50px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        zIndex: 100,
-        border: '2px solid #2ecc71',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 4px 20px rgba(46, 204, 113, 0.4)'
-      }}>
-        📍 Model: /models/man.glb | Press F12 for console logs
+
+      {/* Status Indicator */}
+      {/* <div className="status-badge">
+        <div className="status-dot"></div>
+        <span>🚗 GTA-Style Car System</span>
+      </div> */}
+
+      {/* Instructions */}
+      {/* <div className="help-text">
+        Walk to the police car and press <kbd>F</kbd> to enter
       </div> */}
     </div>
   )

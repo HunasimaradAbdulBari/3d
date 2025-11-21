@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -6,8 +8,9 @@
 
 body {
   overflow: hidden;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #000;
+  color: #fff;
 }
 
 #root {
@@ -15,98 +18,220 @@ body {
   height: 100vh;
 }
 
-.instructions {
+/* Beautiful Modern Control Panel */
+.controls-panel {
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 15px;
-  border: 2px solid #3498db;
-  font-size: 14px;
+  top: 30px;
+  left: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   z-index: 100;
-  pointer-events: none;
+  max-width: 280px;
+  transition: all 0.3s ease;
+}
+
+.controls-panel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.control-group {
+  margin-bottom: 20px;
+}
+
+.control-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.control-item {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Beautiful Keyboard Keys */
+kbd {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  font-family: 'Inter', monospace;
+  min-width: 24px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
-  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 }
 
-.instructions h3 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  color: #3498db;
-  text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+kbd:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
-.instructions p {
-  margin: 5px 0;
-  line-height: 1.6;
-  color: #ecf0f1;
-}
-
-.speedometer {
+/* Status Badge */
+.status-badge {
   position: absolute;
   bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85);
-  color: #2ecc71;
-  padding: 15px 40px;
-  border-radius: 50px;
-  font-size: 16px;
-  font-weight: bold;
+  left: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 12px;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   z-index: 100;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+/* Help Text */
+.help-text {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 12px;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Crosshair (Minimal) */
+#root::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  border: 2px solid #2ecc71;
-  box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
-  backdrop-filter: blur(10px);
+  z-index: 50;
 }
 
-.speedometer p {
-  margin: 0;
-  text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-}
-
-/* Loading animation */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Animated border */
-.instructions::before {
+/* Subtle Vignette */
+#root::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    #3498db 20%, 
-    #2ecc71 50%, 
-    #3498db 80%, 
-    transparent 100%);
-  animation: slide 3s linear infinite;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
-@keyframes slide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+/* Loading Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* Pulsing effect for speedometer */
-.speedometer {
-  animation: pulse 2s ease-in-out infinite;
+/* Smooth Transitions */
+.controls-panel,
+.status-badge,
+.help-text {
+  animation: fadeIn 0.5s ease-out;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  50% {
-    box-shadow: 0 4px 30px rgba(46, 204, 113, 0.6);
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .controls-panel {
+    top: 10px;
+    left: 10px;
+    padding: 16px;
+    max-width: 240px;
+  }
+  
+  .control-title {
+    font-size: 11px;
+  }
+  
+  .control-item {
+    font-size: 12px;
+  }
+  
+  kbd {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  
+  .status-badge,
+  .help-text {
+    bottom: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  
+  .help-text {
+    right: 10px;
+  }
+  
+  .status-badge {
+    left: 10px;
   }
 }

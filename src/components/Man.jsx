@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
 
-function ManModel() {
+function ManModel({ isInCar, carRef, onEnterCar, onExitCar }) {
   const group = useRef()
   const { camera, gl } = useThree()
   
@@ -44,6 +44,7 @@ function ManModel() {
   const JUMP_FORCE = 0.25
   const GRAVITY = 0.015
   const GROUND_LEVEL = 0
+  const CAR_INTERACTION_DISTANCE = 3
   
   // Log model info
   useEffect(() => {
@@ -116,13 +117,39 @@ function ManModel() {
       }
       if (e.code === 'Space') {
         // Jump only if on ground (GTA Vice City style)
-        if (isGrounded.current && !isJumping.current) {
+        if (isGrounded.current && !isJumping.current && !isInCar) {
           isJumping.current = true
           jumpVelocity.current = JUMP_FORCE
           isGrounded.current = false
           console.log('🦘 JUMP!')
         }
         e.preventDefault() // Prevent page scroll
+      }
+      
+      // F key - Enter/Exit Car
+      if (e.code === 'KeyF') {
+        if (isInCar) {
+          // Exit car
+          if (onExitCar) {
+            onExitCar()
+            console.log('🚪 Exiting car...')
+          }
+        } else if (carRef && carRef.current) {
+          // Check distance to car
+          const carPos = carRef.current.position
+          const playerPos = group.current.position
+          const distance = carPos.distanceTo(playerPos)
+          
+          if (distance < CAR_INTERACTION_DISTANCE) {
+            if (onEnterCar) {
+              onEnterCar()
+              console.log('🚗 Entering car...')
+            }
+          } else {
+            console.log('❌ Too far from car! Get closer.')
+          }
+        }
+        e.preventDefault()
       }
       
       // Frame testing keys (1-8) - ONLY when standing still
@@ -147,7 +174,7 @@ function ManModel() {
           console.log('🦵 Testing Frame: 50% (mid-cycle)')
         } else if (e.code === 'Digit6') {
           standingFrame.current = duration * 0.625
-          console.log('🦵 Testing Frame: 62.5%')
+          console.log('🦵 Testing Frame: 62.5% ⭐ BEST FOR THIS MODEL')
         } else if (e.code === 'Digit7') {
           standingFrame.current = duration * 0.75
           console.log('🦵 Testing Frame: 75%')
@@ -156,12 +183,34 @@ function ManModel() {
           console.log('🦵 Testing Frame: 87.5%')
         }
         
+        // FINE TUNING: Use bracket keys [ ] for micro-adjustments
+        else if (e.code === 'BracketLeft') {
+          standingFrame.current -= duration * 0.01  // Move back 1%
+          standingFrame.current = Math.max(0, standingFrame.current)
+          console.log('◀️ Frame adjusted: -1% | Current:', (standingFrame.current/duration*100).toFixed(1) + '%')
+        } else if (e.code === 'BracketRight') {
+          standingFrame.current += duration * 0.01  // Move forward 1%
+          standingFrame.current = Math.min(duration, standingFrame.current)
+          console.log('▶️ Frame adjusted: +1% | Current:', (standingFrame.current/duration*100).toFixed(1) + '%')
+        }
+        
+        // MICRO TUNING: Use comma . for tiny adjustments
+        else if (e.code === 'Comma') {
+          standingFrame.current -= duration * 0.001  // Move back 0.1%
+          standingFrame.current = Math.max(0, standingFrame.current)
+          console.log('◀️◀️ Micro adjust: -0.1% | Current:', (standingFrame.current/duration*100).toFixed(2) + '%')
+        } else if (e.code === 'Period') {
+          standingFrame.current += duration * 0.001  // Move forward 0.1%
+          standingFrame.current = Math.min(duration, standingFrame.current)
+          console.log('▶️▶️ Micro adjust: +0.1% | Current:', (standingFrame.current/duration*100).toFixed(2) + '%')
+        }
+        
         // Apply the frame immediately if standing still
         if (speed.current < 0.01) {
           actions[currentAnim.current].time = standingFrame.current
           actions[currentAnim.current].paused = true
-          console.log('✅ Applied! Check if both legs are on ground now.')
-          console.log('💡 If not perfect, try another number (1-8)')
+          console.log('✅ Applied! Frame:', (standingFrame.current/duration*100).toFixed(2) + '%')
+          console.log('💡 Use [ ] for ±1% adjustment, < > for ±0.1% fine-tuning')
         }
       }
     }
@@ -236,19 +285,21 @@ function ManModel() {
           console.log(`  - ${frame.percent}%: time = ${frame.time.toFixed(3)}`)
         })
         
-        // For most running animations, 50% is usually the best (mid-stride both feet down)
-        // But let's try 0% first (start position)
-        standingFrame.current = 0  // Start with frame 0
+        // Based on testing, 62.5% (key 6) works best for this model
+        // This is where both feet touch the ground during run cycle
+        standingFrame.current = duration * 0.625  // Frame 6 = 62.5%
         
         actions[firstAnim].play()
         actions[firstAnim].time = standingFrame.current
         actions[firstAnim].paused = true
         currentAnim.current = firstAnim
         
-        console.log('✅ Currently using: 0% (frame 0)')
-        console.log('💡 TO FIX LEGS: Press numbers 1-8 to try different frames!')
-        console.log('   1 = 0%   | 2 = 12.5% | 3 = 25%  | 4 = 37.5%')
-        console.log('   5 = 50%  | 6 = 62.5% | 7 = 75%  | 8 = 87.5%')
+        console.log('✅ Currently using: 62.5% (key 6 - Best for this model)')
+        console.log('💡 FINE-TUNE CONTROLS:')
+        console.log('   Numbers 1-8: Test different frame positions')
+        console.log('   [ ] keys: Adjust ±1% for fine-tuning')
+        console.log('   , . keys: Adjust ±0.1% for micro-tuning')
+        console.log('   Find the PERFECT pose where both legs & arms are at rest!')
       }
     }
   }, [actions])
@@ -256,6 +307,17 @@ function ManModel() {
   // Movement loop
   useFrame(() => {
     if (!group.current) return
+    
+    // Don't move if in car
+    if (isInCar) {
+      // Hide character when in car (or position inside car)
+      if (carRef && carRef.current) {
+        const carPos = carRef.current.position.clone()
+        carPos.y += 0.5 // Sit inside car
+        group.current.position.copy(carPos)
+      }
+      return
+    }
     
     // Calculate direction
     const dir = new THREE.Vector3(0, 0, 0)
@@ -431,22 +493,24 @@ function ManModel() {
       }
     }
     
-    // Camera
-    const camPos = new THREE.Vector3(
-      pos.x + Math.sin(cameraAngle.current) * CAMERA_DISTANCE,
-      pos.y + CAMERA_HEIGHT,
-      pos.z + Math.cos(cameraAngle.current) * CAMERA_DISTANCE
-    )
-    
-    camera.position.lerp(camPos, 0.1)
-    
-    const lookAt = pos.clone()
-    lookAt.y += 1.2
-    camera.lookAt(lookAt)
+    // Camera follows character (only when not in car)
+    if (!isInCar) {
+      const camPos = new THREE.Vector3(
+        pos.x + Math.sin(cameraAngle.current) * CAMERA_DISTANCE,
+        pos.y + CAMERA_HEIGHT,
+        pos.z + Math.cos(cameraAngle.current) * CAMERA_DISTANCE
+      )
+      
+      camera.position.lerp(camPos, 0.1)
+      
+      const lookAt = pos.clone()
+      lookAt.y += 1.2
+      camera.lookAt(lookAt)
+    }
   })
   
   return (
-    <group ref={group} position={[0, 0, 0]}>
+    <group ref={group} position={[0, 0, 0]} visible={!isInCar}>
       <primitive object={scene} scale={1} />
     </group>
   )
@@ -552,7 +616,7 @@ function FallbackCharacter() {
 }
 
 // Main component with error boundary
-function Man() {
+function Man({ isInCar, carRef, onEnterCar, onExitCar }) {
   const [hasError, setHasError] = React.useState(false)
   
   React.useEffect(() => {
@@ -567,7 +631,12 @@ function Man() {
   return (
     <Suspense fallback={<FallbackCharacter />}>
       <React.Fragment>
-        <ManModel />
+        <ManModel 
+          isInCar={isInCar}
+          carRef={carRef}
+          onEnterCar={onEnterCar}
+          onExitCar={onExitCar}
+        />
       </React.Fragment>
     </Suspense>
   )
